@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #7dd3fc;
+  --foreground: #000000;
+  --neo-accent: #fde047;
+  --neo-shadow: 6px 6px 0 0 #000000;
 }
 
 @theme inline {
@@ -12,15 +14,46 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.neo-card {
+  border: 4px solid #000;
+  background: var(--neo-accent);
+  box-shadow: var(--neo-shadow);
+}
+
+.neo-input {
+  border: 4px solid #000;
+  background: #fff;
+  box-shadow: 4px 4px 0 0 #000;
+  outline: none;
+}
+
+.neo-input:focus {
+  box-shadow: 6px 6px 0 0 #000;
+  transform: translate(-1px, -1px);
+}
+
+.neo-button {
+  border: 4px solid #000;
+  background: #fff;
+  box-shadow: 4px 4px 0 0 #000;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.neo-button:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 0 #000;
+}
+
+.neo-button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 #000;
 }
