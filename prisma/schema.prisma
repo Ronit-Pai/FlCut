@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Link {
+  id            String       @id @default(uuid())
+  slug          String       @unique @db.VarChar(50)
+  targetUrl     String
+  goLiveAt      DateTime?
+  expiresAt     DateTime?
+  status        LinkStatus   @default(ACTIVE)
+  clickLimit    Int?
+  currentClicks Int          @default(0)
+  totalClicks   Int          @default(0)
+  uniqueClicks  Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  clickEvents   ClickEvent[]
+
+  @@index([slug])
+  @@index([createdAt])
+  @@index([goLiveAt])
+  @@index([expiresAt])
+  @@map("links")
+}
+
+model ClickEvent {
+  id         String     @id @default(uuid())
+  linkId     String
+  ipHash     String?    @db.VarChar(255)
+  userAgent  String?
+  referrer   String?    @db.VarChar(255)
+  country    String?    @db.VarChar(100)
+  city       String?    @db.VarChar(100)
+  deviceType DeviceType @default(UNKNOWN)
+  isBot      Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  link       Link       @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+  @@index([createdAt])
+  @@index([country])
+  @@index([deviceType])
+  @@index([isBot])
+  @@map("click_events")
+}
+
+model ReservedSlug {
+  id        String   @id @default(uuid())
+  slug      String   @unique @db.VarChar(50)
+  reason    String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  @@map("reserved_slugs")
+}
+
+enum LinkStatus {
+  ACTIVE
+  SCHEDULED
+  EXPIRED
+  DISABLED
+}
+
+enum DeviceType {
+  DESKTOP
+  MOBILE
+  TABLET
+  BOT
+  UNKNOWN
+}
