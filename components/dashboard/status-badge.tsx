@@ -1,11 +1,11 @@
-import type { LinkStatus } from "@prisma/client";
+import type { ComputedStatus } from "@/src/lib/links/status";
 
 type StatusConfig = {
   bg: string;
   label: string;
 };
 
-const STATUS_CONFIG: Record<LinkStatus, StatusConfig> = {
+const STATUS_CONFIG: Record<ComputedStatus, StatusConfig> = {
   ACTIVE: { bg: "#bef264", label: "Active" },
   SCHEDULED: { bg: "#7dd3fc", label: "Scheduled" },
   EXPIRED: { bg: "#fda4af", label: "Expired" },
@@ -13,7 +13,7 @@ const STATUS_CONFIG: Record<LinkStatus, StatusConfig> = {
 };
 
 type StatusBadgeProps = {
-  status: LinkStatus;
+  status: ComputedStatus;
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {

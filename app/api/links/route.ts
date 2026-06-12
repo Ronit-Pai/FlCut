@@ -8,6 +8,10 @@ import {
 } from "@/src/lib/links/create-link";
 import { validateAlias } from "@/src/lib/validators/alias";
 import { normalizeUrl } from "@/src/lib/validators/url";
+import {
+  parseOptionalDateTime,
+  requireFutureDate,
+} from "@/src/lib/validators/datetime";
 import type {
   CreateLinkErrorResponse,
   CreateLinkRequestBody,
@@ -57,25 +61,71 @@ export async function POST(
     }
   }
 
- 
+  const parsedGoLiveAt = parseOptionalDateTime(body.goLiveAt);
+
+  if (parsedGoLiveAt !== null && "error" in parsedGoLiveAt) {
+    return NextResponse.json(
+      { success: false, error: `Go live date: ${parsedGoLiveAt.error}` },
+      { status: 400 },
+    );
+  }
+
+  if (parsedGoLiveAt instanceof Date) {
+    const check = requireFutureDate(parsedGoLiveAt, "Go live date");
+    if (!check.valid) {
+      return NextResponse.json(
+        { success: false, error: check.error },
+        { status: 400 },
+      );
+    }
+  }
+
+  const parsedExpiresAt = parseOptionalDateTime(body.expiresAt);
+
+  if (parsedExpiresAt !== null && "error" in parsedExpiresAt) {
+    return NextResponse.json(
+      { success: false, error: `Expiry date: ${parsedExpiresAt.error}` },
+      { status: 400 },
+    );
+  }
+
+  if (parsedExpiresAt instanceof Date) {
+    const check = requireFutureDate(parsedExpiresAt, "Expiry date");
+    if (!check.valid) {
+      return NextResponse.json(
+        { success: false, error: check.error },
+        { status: 400 },
+      );
+    }
+
+    if (parsedGoLiveAt instanceof Date && parsedExpiresAt <= parsedGoLiveAt) {
+      return NextResponse.json(
+        { success: false, error: "Expiry must be after go-live date." },
+        { status: 400 },
+      );
+    }
+  }
+
   try {
-    const shortUrl = await createShortLink(targetUrl, alias);
+    const shortUrl = await createShortLink(targetUrl, alias, {
+      goLiveAt: parsedGoLiveAt instanceof Date ? parsedGoLiveAt : null,
+      expiresAt: parsedExpiresAt instanceof Date ? parsedExpiresAt : null,
+    });
+
     return NextResponse.json({ success: true, shortUrl });
   } catch (error) {
     if (error instanceof AliasAlreadyTakenError) {
       return NextResponse.json(
-        { success: false, error: "Alias has already beentaken." },
+        { success: false, error: "Alias already taken." },
         { status: 409 },
       );
     }
-
     if (error instanceof AliasReservedError) {
       return NextResponse.json(
-        { success: false, error: "Cannot Use This its a Reserved alias." },
+        { success: false, error: "Reserved alias." },
         { status: 409 },
       );
     }
-
     if (error instanceof SlugCollisionError) {
       return NextResponse.json(
         { success: false, error: error.message },
@@ -84,7 +134,6 @@ export async function POST(
     }
 
     console.error("[POST /api/links]", error);
-
     return NextResponse.json(
       { success: false, error: "Failed to create short link." },
       { status: 500 },

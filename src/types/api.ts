@@ -1,6 +1,8 @@
 export type CreateLinkRequestBody = {
   url: string;
   alias?: string;
+  goLiveAt?: string;
+  expiresAt?: string;
 };
 
 export type CreateLinkSuccessResponse = {

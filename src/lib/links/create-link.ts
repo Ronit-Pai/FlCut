@@ -6,7 +6,6 @@ import { prisma } from "@/src/lib/prisma";
 const SLUG_LENGTH = 6;
 const MAX_SLUG_ATTEMPTS = 5;
 
-
 export class SlugCollisionError extends Error {
   constructor() {
     super("Unable to generate a unique slug after multiple attempts.");
@@ -28,6 +27,10 @@ export class AliasReservedError extends Error {
   }
 }
 
+export type CreateLinkOptions = {
+  goLiveAt?: Date | null;
+  expiresAt?: Date | null;
+};
 
 async function isSlugAvailable(slug: string): Promise<boolean> {
   const existing = await prisma.link.findUnique({
@@ -40,27 +43,20 @@ async function isSlugAvailable(slug: string): Promise<boolean> {
 async function generateUniqueSlug(): Promise<string> {
   for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt += 1) {
     const slug = nanoid(SLUG_LENGTH);
-    if (await isSlugAvailable(slug)) {
-      return slug;
-    }
+    if (await isSlugAvailable(slug)) return slug;
   }
   throw new SlugCollisionError();
 }
 
-
 async function resolveSlug(alias?: string | null): Promise<string> {
-  if (!alias) {
-    return generateUniqueSlug();
-  }
+  if (!alias) return generateUniqueSlug();
 
-  
   const reserved = await prisma.reservedSlug.findUnique({
     where: { slug: alias },
     select: { id: true },
   });
   if (reserved) throw new AliasReservedError();
 
-  
   const existing = await prisma.link.findUnique({
     where: { slug: alias },
     select: { id: true },
@@ -70,15 +66,20 @@ async function resolveSlug(alias?: string | null): Promise<string> {
   return alias;
 }
 
-
 export async function createShortLink(
   targetUrl: string,
   alias?: string | null,
+  options?: CreateLinkOptions,
 ): Promise<string> {
   const slug = await resolveSlug(alias);
 
   await prisma.link.create({
-    data: { slug, targetUrl },
+    data: {
+      slug,
+      targetUrl,
+      goLiveAt: options?.goLiveAt ?? null,
+      expiresAt: options?.expiresAt ?? null,
+    },
   });
 
   return `${getBaseUrl()}/${slug}`;
