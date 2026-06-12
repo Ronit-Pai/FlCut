@@ -1,5 +1,6 @@
 export type CreateLinkRequestBody = {
   url: string;
+  alias?: string;
 };
 
 export type CreateLinkSuccessResponse = {
