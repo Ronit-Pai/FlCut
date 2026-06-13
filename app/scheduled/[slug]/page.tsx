@@ -9,21 +9,21 @@ type Props = {
   params: Promise<{ slug: string }>;
 };
 
-function formatUtcDate(date: Date): string {
-  return new Intl.DateTimeFormat("en-GB", {
+function formatIstDate(date: Date): string {
+  return new Intl.DateTimeFormat("en-IN", {
     day: "numeric",
     month: "long",
     year: "numeric",
-    timeZone: "UTC",
+    timeZone: "Asia/Kolkata",
   }).format(date);
 }
 
-function formatUtcTime(date: Date): string {
-  return new Intl.DateTimeFormat("en-GB", {
+function formatIstTime(date: Date): string {
+  return new Intl.DateTimeFormat("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
-    hour12: false,
+    timeZone: "Asia/Kolkata",
+    hour12: true,
   }).format(date);
 }
 
@@ -41,21 +41,19 @@ export default async function ScheduledPage({ params }: Props) {
 
   const link = await prisma.link.findUnique({
     where: { slug },
-    select: { goLiveAt: true, expiresAt: true, status: true },
+    select: { goLiveAt: true, expiresAt: true, isDisabled: true },
   });
 
   if (!link) notFound();
 
-  const computedStatus = getLinkStatus(link);
-  if (computedStatus !== "SCHEDULED") redirect(`/${slug}`);
+  const status = getLinkStatus(link);
+  if (status !== "SCHEDULED") redirect(`/${slug}`);
 
   const goLiveAt = link.goLiveAt!;
 
   return (
     <div className="flex min-h-full flex-1 items-center justify-center bg-[#7dd3fc] p-6">
       <article className="neo-card w-full max-w-md space-y-6 p-8 text-center sm:p-10">
-
-        
         <header className="space-y-3 border-b-4 border-black pb-6">
           <span role="img" aria-label="rocket" className="block text-5xl">
             🚀
@@ -75,11 +73,11 @@ export default async function ScheduledPage({ params }: Props) {
           aria-label="Scheduled activation time"
         >
           <p className="font-mono text-2xl font-black">
-            {formatUtcDate(goLiveAt)}
+            {formatIstDate(goLiveAt)}
           </p>
           <p className="mt-1 font-mono text-lg font-bold text-black/70">
-            {formatUtcTime(goLiveAt)}{" "}
-            <span className="text-sm font-semibold">UTC</span>
+            {formatIstTime(goLiveAt)}{" "}
+            <span className="text-sm font-semibold">IST</span>
           </p>
         </div>
         <Countdown targetDate={goLiveAt.toISOString()} mode="starts" />
@@ -89,7 +87,6 @@ export default async function ScheduledPage({ params }: Props) {
             Come back after the scheduled time to access this link.
           </p>
         </footer>
-
       </article>
     </div>
   );

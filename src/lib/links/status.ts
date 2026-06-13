@@ -1,8 +1,7 @@
-import type { LinkStatus } from "@prisma/client";
 export type ComputedStatus = "ACTIVE" | "SCHEDULED" | "EXPIRED" | "DISABLED";
 
 export type StatusInput = {
-  status: LinkStatus;
+  isDisabled: boolean;
   goLiveAt: Date | null;
   expiresAt: Date | null;
 };
@@ -14,14 +13,12 @@ export function isScheduled(
   return goLiveAt !== null && now < goLiveAt;
 }
 
-
 export function isExpired(
   expiresAt: Date | null,
   now: Date = new Date(),
 ): boolean {
   return expiresAt !== null && now > expiresAt;
 }
-
 
 export function isActive(link: StatusInput, now: Date = new Date()): boolean {
   return getLinkStatus(link, now) === "ACTIVE";
@@ -31,7 +28,7 @@ export function getLinkStatus(
   link: StatusInput,
   now: Date = new Date(),
 ): ComputedStatus {
-  if (link.status === "DISABLED") return "DISABLED";
+  if (link.isDisabled) return "DISABLED";
   if (isExpired(link.expiresAt, now)) return "EXPIRED";
   if (isScheduled(link.goLiveAt, now)) return "SCHEDULED";
   return "ACTIVE";

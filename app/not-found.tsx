@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function NotFound() {
   return (
     <div className="flex min-h-full flex-1 items-center justify-center bg-[#fff7a8] p-6">
@@ -13,9 +11,6 @@ export default function NotFound() {
         <p className="text-base font-medium text-black/80">
           This short link does not exist or is no longer active.
         </p>
-        <Link href="/" className="neo-button inline-block px-6 py-3">
-          Back home
-        </Link>
       </div>
     </div>
   );
