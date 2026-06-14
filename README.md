@@ -175,3 +175,10 @@ AUTH_SECRET=
 ADMIN_EMAIL=
 ADMIN_PASSWORD=
 ```
+## Future features
+- QR code generation 
+- add a delete option to remove unwanted links
+- graph based analytics 
+
+## Note for flc 
+The credentials to login is admin@example.com and password is admin in the current deployment.
