@@ -176,6 +176,7 @@ DATABASE_URL=
 AUTH_SECRET=
 ADMIN_EMAIL=
 ADMIN_PASSWORD=
+BASE_URL=
 ```
 ## Future features
 - QR code generation 
