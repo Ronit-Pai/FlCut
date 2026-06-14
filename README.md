@@ -1,36 +1,177 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FLCut
 
-## Getting Started
+FLCut is an event-focused URL shortener built with Next.js, Prisma, PostgreSQL, and TypeScript.
+It supports short link creation, custom aliases, scheduled publishing, link expiry, analytics, and an admin dashboard.
 
-First, run the development server:
+## Tech Stack
+
+- Next.js 16
+- TypeScript
+- Prisma ORM
+- PostgreSQL (Neon)
+- Tailwind CSS
+
+## Features
+
+- Short URL generation
+- Custom aliases
+- Scheduled links
+- Expiring links
+- Admin auth
+- Dashboard analytics
+- Click tracking
+- Enable / Disable links
+
+## Setup
+
+Create a `.env` file:
+
+```env
+DATABASE_URL=postgresql://...
+AUTH_SECRET=your-secret
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=password
+BASE_URL=http://localhost:3000
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run migrations:
+
+```bash
+npx prisma migrate dev
+```
+
+Seed reserved slugs:
+
+```bash
+npm run db:seed
+```
+
+Start development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Method | Endpoint | Description |
+|----------|----------|----------|
+| POST | `/api/links` | Create short link |
+| POST | `/api/auth/login` | Admin login |
+| POST | `/api/auth/logout` | Admin logout |
+| PATCH | `/api/links/[id]/toggle` | Enable / Disable link |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Data Model
 
-## Learn More
+### Link
 
-To learn more about Next.js, take a look at the following resources:
+Stores the short URL and its lifecycle state.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Field |
+|---------|
+| id |
+| slug |
+| targetUrl |
+| goLiveAt |
+| expiresAt |
+| isDisabled |
+| createdAt |
+| updatedAt |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### ClickEvent
 
-## Deploy on Vercel
+Stores analytics for each redirect.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Field |
+|---------|
+| id |
+| linkId |
+| ipHash |
+| userAgent |
+| deviceType |
+| referrer |
+| country |
+| createdAt |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### ReservedSlug
+
+Stores blocked aliases such as:
+
+- admin
+- api
+- dashboard
+- login
+- (and a few more)
+
+The model is centered around Link, ClickEvent, and ReservedSlug. Links remain small while analytics data grows independently.
+
+## Architecture
+
+```text
+Create Link
+     ↓
+Store Link
+     ↓
+Visit Short URL
+     ↓
+Validate Status
+     ↓
+Track Click
+     ↓
+Redirect
+```
+
+## Assumptions
+- Authentication requirements
+- Bot filtering (idk how well it works)
+- Custom domains / alias
+
+I assumed a only a single admin managing all links so only 1 (login creds in .env itself).
+
+## Tradeoff
+
+used server-side click tracking using Prisma and PostgreSQL.
+
+Its easy but not prefered when scaling
+
+## If I Only Had 4 Hours
+
+I would build:
+
+1. Link creation
+2. Redirect handling
+3. Dashboard listing (basic details only)
+
+Idk if i can do these in 4 hours:
+1. Scheduling
+2. Expiry
+3. Advanced analytics
+4. Authentication improvements
+
+## Why This Data Model?
+
+Link contains everything required to resolve a short URL.
+
+ClickEvent is stored separately because analytics data grows much faster than link metadata.
+
+ReservedSlug prevents collisions with application routes and reserved keywords.
+
+## Deployment
+
+- Vercel
+- Neon PostgreSQL
+
+Required environment variables:
+
+```env
+DATABASE_URL=
+AUTH_SECRET=
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
+```
