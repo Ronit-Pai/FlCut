@@ -47,17 +47,25 @@ export async function getUniqueClicksByLinkId(): Promise<Record<string, number>>
   return result;
 }
 
-export async function getTopReferrers(limit = 8): Promise<ReferrerStat[]> {
+function linkWhere(linkId?: string): Prisma.ClickEventWhereInput {
+  return linkId ? { linkId } : {};
+}
+
+export async function getTopReferrers(
+  limit = 8,
+  linkId?: string,
+): Promise<ReferrerStat[]> {
   const groups = await prisma.clickEvent.groupBy({
     by: ["referrer"],
-    _count: { referrer: true },
+    where: linkWhere(linkId),
+    _count: { _all: true },
     orderBy: { _count: { referrer: "desc" } },
     take: limit,
   });
 
   return groups.map((g) => ({
     source: g.referrer ?? "Direct",
-    count:  g._count.referrer,
+    count: g._count._all,
   }));
 }
 
@@ -75,28 +83,32 @@ export async function getTopCountries(limit = 8): Promise<CountryStat[]> {
   }));
 }
 
-export async function getDeviceBreakdown(): Promise<DeviceStat[]> {
+export async function getDeviceBreakdown(linkId?: string): Promise<DeviceStat[]> {
   const groups = await prisma.clickEvent.groupBy({
     by: ["deviceType"],
-    _count: { deviceType: true },
+    where: linkWhere(linkId),
+    _count: { _all: true },
     orderBy: { _count: { deviceType: "desc" } },
   });
 
-  const total = groups.reduce((s, g) => s + g._count.deviceType, 0);
+  const total = groups.reduce((s, g) => s + g._count._all, 0);
 
   return groups.map((g) => ({
     type:       g.deviceType ?? "Unknown",
-    count:      g._count.deviceType,
-    percentage: total > 0 ? Math.round((g._count.deviceType / total) * 100) : 0,
+    count:      g._count._all,
+    percentage: total > 0 ? Math.round((g._count._all / total) * 100) : 0,
   }));
 }
 
-export async function getClicksTimeSeries(days = 7): Promise<TimeSeriesPoint[]> {
+export async function getClicksTimeSeries(
+  days = 7,
+  linkId?: string,
+): Promise<TimeSeriesPoint[]> {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
   const clicks = await prisma.clickEvent.findMany({
-    where:   { createdAt: { gte: since } },
-    select:  { createdAt: true },
+    where: { ...linkWhere(linkId), createdAt: { gte: since } },
+    select: { createdAt: true },
     orderBy: { createdAt: "asc" },
   });
 

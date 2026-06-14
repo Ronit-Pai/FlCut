@@ -12,9 +12,18 @@ import {
   getDeviceBreakdown,
   getClicksTimeSeries,
 } from "@/src/lib/analytics/queries";
+import type {
+  DashboardStats,
+  DeviceStat,
+  LinkWithCounts,
+  ReferrerStat,
+  TimeSeriesPoint,
+} from "@/src/lib/analytics/queries";
 import { LinksTable } from "@/components/dashboard/links-table";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { AnalyticsSection } from "@/components/dashboard/analytics-section";
+import { LinkSelector } from "@/components/dashboard/link-selector";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 export const metadata: Metadata = {
   title: "Dashboard — FLCut",
@@ -43,29 +52,61 @@ const EMPTY_MESSAGES: Record<FilterValue, string> = {
   disabled: "No disabled links.",
 };
 
+const EMPTY_STATS: DashboardStats = {
+  totalLinks: 0,
+  totalClicks: 0,
+  uniqueVisitors: 0,
+};
+
 type Props = {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; analytics?: string }>;
 };
 
 export default async function DashboardPage({ searchParams }: Props) {
-  const { filter: rawFilter = "all" } = await searchParams;
+  const { filter: rawFilter = "all", analytics: selectedSlugParam } =
+    await searchParams;
   const filter: FilterValue = isValidFilter(rawFilter) ? rawFilter : "all";
 
-  const [
-    allLinks,
-    stats,
-    uniqueClicksByLinkId,
-    topReferrers,
-    deviceBreakdown,
-    timeSeries,
-  ] = await Promise.all([
-    getLinksWithCounts(),
-    getDashboardStats(),
-    getUniqueClicksByLinkId(),
-    getTopReferrers(),
-    getDeviceBreakdown(),
-    getClicksTimeSeries(7),
-  ]);
+  let allLinks: LinkWithCounts[] = [];
+  let stats = EMPTY_STATS;
+  let uniqueClicksByLinkId: Record<string, number> = {};
+  let dashboardDataError: string | null = null;
+
+  try {
+    allLinks = await getLinksWithCounts();
+    [stats, uniqueClicksByLinkId] = await Promise.all([
+      getDashboardStats(),
+      getUniqueClicksByLinkId(),
+    ]);
+  } catch {
+    console.warn("[Dashboard] Database unavailable.");
+    dashboardDataError =
+      "Dashboard data is unavailable because the database could not be reached.";
+  }
+
+  const selectedLink =
+    allLinks.find((link) => link.slug === selectedSlugParam) ??
+    allLinks[0] ??
+    null;
+
+  let topReferrers: ReferrerStat[] = [];
+  let deviceBreakdown: DeviceStat[] = [];
+  let timeSeries: TimeSeriesPoint[] = [];
+  let analyticsDataError: string | null = null;
+
+  if (selectedLink) {
+    try {
+      [topReferrers, deviceBreakdown, timeSeries] = await Promise.all([
+        getTopReferrers(8, selectedLink.id),
+        getDeviceBreakdown(selectedLink.id),
+        getClicksTimeSeries(7, selectedLink.id),
+      ]);
+    } catch {
+      console.warn("[Dashboard] Analytics unavailable.");
+      analyticsDataError =
+        "Analytics for this link are unavailable because the database could not be reached.";
+    }
+  }
 
   const now = new Date();
 
@@ -93,6 +134,15 @@ export default async function DashboardPage({ searchParams }: Props) {
           activeLinks={activeLinks}
         />
 
+        {dashboardDataError || analyticsDataError ? (
+          <div
+            role="alert"
+            className="border-4 border-black bg-[#fda4af] px-4 py-3 font-mono text-sm font-semibold shadow-[4px_4px_0_0_#000]"
+          >
+            {dashboardDataError ?? analyticsDataError}
+          </div>
+        ) : null}
+
         <header className="neo-card p-8 sm:p-10">
           <div className="flex flex-col gap-4 border-b-4 border-black pb-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-2">
@@ -108,12 +158,12 @@ export default async function DashboardPage({ searchParams }: Props) {
               </p>
             </div>
 
-            <Link
-              href="/"
-              className="neo-button self-start px-5 py-2.5 text-sm sm:self-auto"
-            >
-              + New Link
-            </Link>
+            <div className="flex flex-wrap gap-2 self-start sm:self-auto">
+              <Link href="/" className="neo-button px-5 py-2.5 text-sm">
+                + New Link
+              </Link>
+              <LogoutButton />
+            </div>
           </div>
 
           <nav
@@ -159,6 +209,14 @@ export default async function DashboardPage({ searchParams }: Props) {
           topReferrers={topReferrers}
           deviceBreakdown={deviceBreakdown}
           timeSeries={timeSeries}
+          selectedLabel={selectedLink ? `/${selectedLink.slug}` : null}
+          controls={
+            <LinkSelector
+              links={allLinks}
+              selectedSlug={selectedLink?.slug ?? null}
+              currentFilter={filter}
+            />
+          }
         />
       </div>
     </div>

@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import type {
   ReferrerStat,
   DeviceStat,
@@ -52,21 +54,35 @@ type AnalyticsSectionProps = {
   topReferrers: ReferrerStat[];
   deviceBreakdown: DeviceStat[];
   timeSeries: TimeSeriesPoint[];
+  selectedLabel: string | null;
+  controls: ReactNode;
 };
 
 export function AnalyticsSection({
   topReferrers,
   deviceBreakdown,
   timeSeries,
+  selectedLabel,
+  controls,
 }: AnalyticsSectionProps) {
   const maxReferrer = topReferrers[0]?.count ?? 1;
   const maxDay = Math.max(...timeSeries.map((p) => p.clicks), 1);
 
   return (
     <section aria-label="Analytics" className="space-y-4">
-      <h2 className="font-mono text-sm font-bold uppercase tracking-widest text-black/60">
-        Analytics
-      </h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="font-mono text-sm font-bold uppercase tracking-widest text-black/60">
+            Analytics
+          </h2>
+          <p className="mt-1 text-sm font-semibold text-black/70">
+            {selectedLabel
+              ? `Showing analytics for ${selectedLabel}`
+              : "Choose a link to view analytics."}
+          </p>
+        </div>
+        {controls}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <SectionCard title="Top Sources">
