@@ -21,6 +21,7 @@ It supports short link creation, custom aliases, scheduled publishing, link expi
 - Dashboard analytics
 - Click tracking
 - Enable / Disable links
+- Delete links
 
 ## Setup
 
@@ -66,6 +67,7 @@ npm run dev
 | POST | `/api/auth/login` | Admin login |
 | POST | `/api/auth/logout` | Admin logout |
 | PATCH | `/api/links/[id]/toggle` | Enable / Disable link |
+| DELETE | `/api/links/[id]` | Delete link |
 
 ## Data Model
 
@@ -177,7 +179,6 @@ ADMIN_PASSWORD=
 ```
 ## Future features
 - QR code generation 
-- add a delete option to remove unwanted links
 - graph based analytics 
 
 ## Note for flc 

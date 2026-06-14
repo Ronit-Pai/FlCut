@@ -1,6 +1,7 @@
 import { getLinkStatus, getCountdownLabel } from "@/src/lib/links/status";
 import { StatusBadge } from "./status-badge";
 import { ToggleDisableButton } from "./toggle-disable-button";
+import { DeleteLinkButton } from "./delete-link-button";
 import type { LinkWithCounts } from "@/src/lib/analytics/queries";
 
 type LinksTableProps = {
@@ -138,10 +139,13 @@ export function LinksTable({
                 </td>
 
                 <td className={TD}>
-                  <ToggleDisableButton
-                    linkId={link.id}
-                    isDisabled={link.isDisabled}
-                  />
+                  <div className="flex gap-2">
+                    <ToggleDisableButton
+                      linkId={link.id}
+                      isDisabled={link.isDisabled}
+                    />
+                    <DeleteLinkButton linkId={link.id} />
+                  </div>
                 </td>
               </tr>
             );
