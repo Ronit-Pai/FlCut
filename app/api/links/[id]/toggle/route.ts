@@ -12,10 +12,19 @@ export async function PATCH(
 ): Promise<NextResponse> {
   const { id } = await params;
 
-  const link = await prisma.link.findUnique({
-    where:  { id },
-    select: { id: true, isDisabled: true },
-  });
+  let link;
+
+  try {
+    link = await prisma.link.findUnique({
+      where:  { id },
+      select: { id: true, isDisabled: true },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: "Database connection error." },
+      { status: 500 },
+    );
+  }
 
   if (!link) {
     return NextResponse.json(
@@ -24,11 +33,20 @@ export async function PATCH(
     );
   }
 
-  const updated = await prisma.link.update({
-    where: { id },
-    data:  { isDisabled: !link.isDisabled },
-    select: { isDisabled: true },
-  });
+  let updated;
+
+  try {
+    updated = await prisma.link.update({
+      where: { id },
+      data:  { isDisabled: !link.isDisabled },
+      select: { isDisabled: true },
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: "Unable to update link." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ success: true, isDisabled: updated.isDisabled });
 }

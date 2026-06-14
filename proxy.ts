@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import { SESSION_COOKIE, isValidSession } from "@/src/lib/auth/session";
+import { SESSION_COOKIE, verifySessionToken } from "./src/lib/auth";
 
-export function proxy(request: NextRequest): NextResponse {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
-  const authenticated = isValidSession(
-    request.cookies.get(SESSION_COOKIE)?.value,
+  const authCookie = request.cookies.get(SESSION_COOKIE)?.value;
+  const authenticated = Boolean(
+    authCookie && (await verifySessionToken(authCookie)),
   );
 
   if (pathname === "/login") {

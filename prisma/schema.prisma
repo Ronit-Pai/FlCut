@@ -26,13 +26,13 @@ model Link {
 model ClickEvent {
   id         String   @id @default(uuid())
   linkId     String
-  link       Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
   ipHash     String?
   userAgent  String?
   deviceType String?
   referrer   String?
   country    String?
   createdAt  DateTime @default(now())
+  link       Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@index([linkId])
   @@index([createdAt])
