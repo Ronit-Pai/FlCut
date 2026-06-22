@@ -8,6 +8,7 @@ import {
 } from "@/src/lib/links/create-link";
 import { validateAlias } from "@/src/lib/validators/alias";
 import { normalizeUrl } from "@/src/lib/validators/url";
+import { getBaseUrl } from "@/src/lib/env";
 import {
   parseOptionalDateTime,
   requireFutureDate,
@@ -42,6 +43,24 @@ export async function POST(
 
   const targetUrl = normalizeUrl(body.url);
   if (!targetUrl) {
+    return NextResponse.json(
+      { success: false, error: "URL must be a valid http or https address." },
+      { status: 400 },
+    );
+  }
+
+  // Prevent creating short links that point back to this app's base URL/domain.
+  // To avoid infinite redirect loop.
+  try {
+    const targetParsed = new URL(targetUrl);
+    const baseParsed = new URL(getBaseUrl());
+    if (targetParsed.host === baseParsed.host) {
+      return NextResponse.json(
+        { success: false, error: "URL cannot point to this application's domain." },
+        { status: 400 },
+      );
+    }
+  } catch (e) {
     return NextResponse.json(
       { success: false, error: "URL must be a valid http or https address." },
       { status: 400 },
