@@ -176,10 +176,8 @@ DATABASE_URL=
 AUTH_SECRET=
 ADMIN_EMAIL=
 ADMIN_PASSWORD=
+BASE_URL=
 ```
 ## Future features
 - QR code generation 
 - graph based analytics 
-
-## Note for flc 
-The credentials to login is admin@example.com and password is admin in the current deployment.
